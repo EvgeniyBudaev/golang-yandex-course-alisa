@@ -2,7 +2,10 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/EvgeniyBudaev/golang-yandex-course-alisa/internal/logger"
+	"github.com/EvgeniyBudaev/golang-yandex-course-alisa/internal/store/pg"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -22,11 +25,17 @@ func run() error {
 		return err
 	}
 
-	// создаём экземпляр приложения, пока без внешней зависимости хранилища сообщений
-	appInstance := newApp(nil)
+	// создаём соединение к СУБД PostgreSQL с помощью аргумента командной строки
+	conn, err := sql.Open("pgx", flagDatabaseURI)
+	if err != nil {
+		return err
+	}
+
+	// создаём экземпляр приложения, передавая реализацию хранилища pg в качестве внешней зависимости
+	appInstance := newApp(pg.NewStore(conn))
 
 	logger.Log.Info("Running server", zap.String("address", flagRunAddr))
-	// обернём хендлер webhook в middleware с логированием и поддержкой gzip
+	// обернём хендлер webhook в middleware с логгированием и поддержкой gzip
 	return http.ListenAndServe(flagRunAddr, logger.RequestLogger(gzipMiddleware(appInstance.webhook)))
 }
 
