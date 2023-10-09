@@ -55,3 +55,6 @@ postgres=# grant all privileges on database dbname to username;
 ```
 go get -u github.com/jackc/pgx/v5
 ```
+```
+go get -u "github.com/jackc/pgerrcode"
+```

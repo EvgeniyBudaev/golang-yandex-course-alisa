@@ -3,7 +3,10 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/EvgeniyBudaev/golang-yandex-course-alisa/internal/store"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"time"
 )
 
@@ -16,6 +19,26 @@ type Store struct {
 // NewStore возвращает новый экземпляр PostgreSQL хранилища
 func NewStore(conn *sql.DB) *Store {
 	return &Store{conn: conn}
+}
+
+func (s Store) RegisterUser(ctx context.Context, userID, username string) error {
+	// добавляем новую запись пользователя
+	_, err := s.conn.ExecContext(ctx, `
+        INSERT INTO users
+        (id, username)
+        VALUES
+        ($1, $2);
+    `, userID, username)
+
+	if err != nil {
+		// проверяем, что ошибка сигнализирует о потенциальном нарушении целостности данных
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgerrcode.IsIntegrityConstraintViolation(pgErr.Code) {
+			err = store.ErrConflict
+		}
+	}
+
+	return err
 }
 
 // Bootstrap подготавливает БД к работе, создавая необходимые таблицы и индексы
