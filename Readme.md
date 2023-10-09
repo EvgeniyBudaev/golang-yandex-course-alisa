@@ -15,3 +15,8 @@ go get -u github.com/sirupsen/logrus
 ```
 go get -u go.uber.org/zap 
 ```
+
+Пакет gomock. Имитация данных для тестирования
+```
+go get -u github.com/golang/mock/mockgen@latest
+```
